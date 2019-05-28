@@ -167,7 +167,7 @@ struct rct_vehicle : rct_sprite_common
         int16_t var_4E;
         int16_t crash_z; // 0x4E
     };
-    uint8_t status;                  // 0x50
+    VEHICLE_STATUS status;                  // 0x50
     uint8_t sub_state;               // 0x51
     uint16_t peep[32];               // 0x52
     uint8_t peep_tshirt_colours[32]; // 0x92
@@ -234,6 +234,7 @@ struct rct_vehicle : rct_sprite_common
     rct_vehicle* GetHead();
     const rct_vehicle* GetHead() const;
     const rct_vehicle* GetCar(size_t carIndex) const;
+    void SetState(VEHICLE_STATUS vehicleStatus, uint8_t setState);
 };
 
 struct train_ref
@@ -313,7 +314,7 @@ enum
     VEHICLE_ENTRY_ANIMATION_MULTI_DIM_COASTER
 };
 
-enum
+enum VEHICLE_STATUS
 {
     VEHICLE_STATUS_MOVING_TO_END_OF_STATION,
     VEHICLE_STATUS_WAITING_FOR_PASSENGERS,

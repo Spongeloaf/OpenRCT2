@@ -1,0 +1,12 @@
+
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\IDE\VC\VCTargets
+
+VCTargetsPath
+
+
+
+"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\MSBuild.exe" C:\dev\OpenRCT2\openrct2.proj /t:build /p:platform=x64
+
+
+
+C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\include

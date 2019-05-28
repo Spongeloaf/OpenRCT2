@@ -2073,9 +2073,8 @@ static void vehicle_update_moving_to_end_of_station(rct_vehicle* vehicle)
             vehicle->current_station = 0;
             vehicle->velocity = 0;
             vehicle->acceleration = 0;
-            vehicle->status = VEHICLE_STATUS_WAITING_FOR_PASSENGERS;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+
+            vehicle->SetState(VEHICLE_STATUS_WAITING_FOR_PASSENGERS, 0);
             break;
         default:
         {
@@ -2110,9 +2109,7 @@ static void vehicle_update_moving_to_end_of_station(rct_vehicle* vehicle)
 
                 if (ride->mode == RIDE_MODE_RACE && vehicle->sub_state >= 40)
                 {
-                    vehicle->status = VEHICLE_STATUS_WAITING_FOR_PASSENGERS;
-                    vehicle->sub_state = 0;
-                    vehicle_invalidate_window(vehicle);
+                    vehicle->SetState(VEHICLE_STATUS_WAITING_FOR_PASSENGERS, 0);
                     break;
                 }
             }
@@ -2130,9 +2127,7 @@ static void vehicle_update_moving_to_end_of_station(rct_vehicle* vehicle)
             vehicle->current_station = station;
             vehicle->velocity = 0;
             vehicle->acceleration = 0;
-            vehicle->status = VEHICLE_STATUS_WAITING_FOR_PASSENGERS;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_WAITING_FOR_PASSENGERS, 0);
             break;
         }
     }
@@ -2173,9 +2168,7 @@ static void train_ready_to_depart(rct_vehicle* vehicle, uint8_t num_peeps_on_tra
         if (vehicle->peep[peep] != SPRITE_INDEX_NULL)
         {
             ride->stations[vehicle->current_station].TrainAtStation = RideStation::NO_TRAIN;
-            vehicle->status = VEHICLE_STATUS_UNLOADING_PASSENGERS;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_UNLOADING_PASSENGERS, 0);
             return;
         }
 
@@ -2191,9 +2184,8 @@ static void train_ready_to_depart(rct_vehicle* vehicle, uint8_t num_peeps_on_tra
         return;
 
     ride->stations[vehicle->current_station].TrainAtStation = RideStation::NO_TRAIN;
-    vehicle->status = VEHICLE_STATUS_WAITING_FOR_PASSENGERS;
-    vehicle->sub_state = 0;
-    vehicle_invalidate_window(vehicle);
+
+    vehicle->SetState(VEHICLE_STATUS_WAITING_FOR_PASSENGERS, 0);
 }
 
 static int ride_get_train_index_from_vehicle(Ride* ride, uint16_t spriteIndex)
@@ -2414,16 +2406,15 @@ static void vehicle_update_waiting_for_passengers(rct_vehicle* vehicle)
         return;
 
     vehicle->velocity = 0;
-    vehicle->status = VEHICLE_STATUS_WAITING_TO_DEPART;
-    vehicle->sub_state = 0;
+    // vehicle->status = VEHICLE_STATUS_WAITING_TO_DEPART;
+    // vehicle->sub_state = 0;
     vehicle->update_flags &= ~VEHICLE_UPDATE_FLAG_WAIT_ON_ADJACENT;
 
     if (ride->depart_flags & RIDE_DEPART_SYNCHRONISE_WITH_ADJACENT_STATIONS)
     {
         vehicle->update_flags |= VEHICLE_UPDATE_FLAG_WAIT_ON_ADJACENT;
     }
-
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_WAITING_TO_DEPART, 0);
 }
 
 /**
@@ -2463,9 +2454,7 @@ static void vehicle_update_dodgems_mode(rct_vehicle* vehicle)
     vehicle_invalidate(vehicle);
     vehicle->velocity = 0;
     vehicle->acceleration = 0;
-    vehicle->status = VEHICLE_STATUS_UNLOADING_PASSENGERS;
-    vehicle->sub_state = 0;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_UNLOADING_PASSENGERS, 0);
 }
 
 /**
@@ -2508,9 +2497,7 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
             {
                 if (!ride_get_exit_location(ride, vehicle->current_station).isNull())
                 {
-                    vehicle->status = VEHICLE_STATUS_UNLOADING_PASSENGERS;
-                    vehicle->sub_state = 0;
-                    vehicle_invalidate_window(vehicle);
+                    vehicle->SetState(VEHICLE_STATUS_UNLOADING_PASSENGERS, 0);
                     return;
                 }
             }
@@ -2526,9 +2513,7 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
                 {
                     if (!ride_get_exit_location(ride, vehicle->current_station).isNull())
                     {
-                        vehicle->status = VEHICLE_STATUS_UNLOADING_PASSENGERS;
-                        vehicle->sub_state = 0;
-                        vehicle_invalidate_window(vehicle);
+                        vehicle->SetState(VEHICLE_STATUS_UNLOADING_PASSENGERS, 0);
                         return;
                     }
                     break;
@@ -2557,8 +2542,7 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
         }
     }
 
-    vehicle->status = VEHICLE_STATUS_DEPARTING;
-    vehicle->sub_state = 0;
+    vehicle->SetState(VEHICLE_STATUS_DEPARTING, 0);
 
     if (ride->lifecycle_flags & RIDE_LIFECYCLE_CABLE_LIFT)
     {
@@ -2572,7 +2556,7 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
         {
             if (track.element->AsTrack()->HasCableLift())
             {
-                vehicle->status = VEHICLE_STATUS_WAITING_FOR_CABLE_LIFT;
+                vehicle->SetState(VEHICLE_STATUS_WAITING_FOR_CABLE_LIFT, vehicle->sub_state);
             }
         }
     }
@@ -2580,45 +2564,35 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
     switch (ride->mode)
     {
         case RIDE_MODE_BUMPERCAR:
-            vehicle->status = VEHICLE_STATUS_TRAVELLING_DODGEMS;
-            vehicle_invalidate_window(vehicle);
+
             // Bumper mode uses sub_state / var_CE to tell how long
             // the vehicle has been ridden.
-            vehicle->sub_state = 0;
+            vehicle->SetState(VEHICLE_STATUS_TRAVELLING_DODGEMS, 0);
             vehicle->var_CE = 0;
             vehicle_update_dodgems_mode(vehicle);
             break;
         case RIDE_MODE_SWING:
-            vehicle->status = VEHICLE_STATUS_SWINGING;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_SWINGING, 0);
             vehicle->var_CE = 0;
             vehicle->current_time = -1;
             vehicle_update_swinging(vehicle);
             break;
         case RIDE_MODE_ROTATION:
-            vehicle->status = VEHICLE_STATUS_ROTATING;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_ROTATING, 0);
             vehicle->var_CE = 0;
             vehicle->current_time = -1;
             vehicle_update_rotating(vehicle);
             break;
         case RIDE_MODE_FILM_AVENGING_AVIATORS:
         case RIDE_MODE_FILM_THRILL_RIDERS:
-            vehicle->status = VEHICLE_STATUS_SIMULATOR_OPERATING;
-            vehicle->sub_state = 0;
-            if (ride->mode == RIDE_MODE_FILM_THRILL_RIDERS)
-                vehicle->sub_state = 1;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_SIMULATOR_OPERATING, 1);
             vehicle->current_time = -1;
             vehicle_update_simulator_operating(vehicle);
             break;
         case RIDE_MODE_BEGINNERS:
         case RIDE_MODE_INTENSE:
         case RIDE_MODE_BERSERK:
-            vehicle->status = VEHICLE_STATUS_TOP_SPIN_OPERATING;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_TOP_SPIN_OPERATING, vehicle->sub_state);
 
             switch (ride->mode)
             {
@@ -2639,9 +2613,7 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
             break;
         case RIDE_MODE_FORWARD_ROTATION:
         case RIDE_MODE_BACKWARD_ROTATION:
-            vehicle->status = VEHICLE_STATUS_FERRIS_WHEEL_ROTATING;
-            vehicle->sub_state = vehicle->vehicle_sprite_type;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_FERRIS_WHEEL_ROTATING, vehicle->vehicle_sprite_type);
             vehicle->var_CE = 0;
             vehicle->ferris_wheel_var_0 = 8;
             vehicle->ferris_wheel_var_1 = 8;
@@ -2650,8 +2622,7 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
         case RIDE_MODE_3D_FILM_MOUSE_TAILS:
         case RIDE_MODE_3D_FILM_STORM_CHASERS:
         case RIDE_MODE_3D_FILM_SPACE_RAIDERS:
-            vehicle->status = VEHICLE_STATUS_SHOWING_FILM;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_SHOWING_FILM, vehicle->sub_state);
             switch (ride->mode)
             {
                 case RIDE_MODE_3D_FILM_MOUSE_TAILS:
@@ -2668,39 +2639,30 @@ static void vehicle_update_waiting_to_depart(rct_vehicle* vehicle)
             vehicle_update_showing_film(vehicle);
             break;
         case RIDE_MODE_CIRCUS_SHOW:
-            vehicle->status = VEHICLE_STATUS_DOING_CIRCUS_SHOW;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_DOING_CIRCUS_SHOW, 0);
             vehicle->current_time = -1;
             vehicle_update_doing_circus_show(vehicle);
             break;
         case RIDE_MODE_SPACE_RINGS:
-            vehicle->status = VEHICLE_STATUS_SPACE_RINGS_OPERATING;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_SPACE_RINGS_OPERATING, 0);
             vehicle->vehicle_sprite_type = 0;
             vehicle->current_time = -1;
             vehicle_update_space_rings_operating(vehicle);
             break;
         case RIDE_MODE_HAUNTED_HOUSE:
-            vehicle->status = VEHICLE_STATUS_HAUNTED_HOUSE_OPERATING;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_HAUNTED_HOUSE_OPERATING, 0);
             vehicle->vehicle_sprite_type = 0;
             vehicle->current_time = -1;
             vehicle_update_haunted_house_operating(vehicle);
             break;
         case RIDE_MODE_CROOKED_HOUSE:
-            vehicle->status = VEHICLE_STATUS_CROOKED_HOUSE_OPERATING;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_CROOKED_HOUSE_OPERATING, 0);
             vehicle->vehicle_sprite_type = 0;
             vehicle->current_time = -1;
             vehicle_update_crooked_house_operating(vehicle);
             break;
         default:
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(vehicle->status, 0);
             vehicle->var_CE = 0;
             break;
     }
@@ -3160,9 +3122,8 @@ static void vehicle_update_travelling_boat_hire_setup(rct_vehicle* vehicle)
 
     vehicle->boat_location = location;
     vehicle->var_35 = 0;
-    vehicle->status = VEHICLE_STATUS_TRAVELLING_BOAT;
-    vehicle_invalidate_window(vehicle);
-    vehicle->sub_state = 0;
+
+    vehicle->SetState(VEHICLE_STATUS_TRAVELLING_BOAT, 0);
     vehicle->remaining_distance += 27924;
 
     vehicle_update_travelling_boat(vehicle);
@@ -3457,12 +3418,8 @@ static void vehicle_finish_departing(rct_vehicle* vehicle)
 
         ride->stations[vehicle->current_station].Depart |= waitingTime;
     }
-
-    vehicle->status = VEHICLE_STATUS_TRAVELLING;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_TRAVELLING, 1);
     vehicle->lost_time_out = 0;
-
-    vehicle->sub_state = 1;
     if (vehicle->velocity < 0)
         vehicle->sub_state = 0;
 }
@@ -3519,8 +3476,7 @@ static void vehicle_check_if_missing(rct_vehicle* vehicle)
  */
 static void vehicle_update_collision_setup(rct_vehicle* vehicle)
 {
-    vehicle->status = VEHICLE_STATUS_CRASHED;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_CRASHED, vehicle->sub_state);
 
     Ride* ride = get_ride(vehicle->ride);
     if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_CRASHED))
@@ -3594,8 +3550,7 @@ static constexpr const LocationXY16 stru_9A3AC4[] = {
  */
 static void vehicle_update_crash_setup(rct_vehicle* vehicle)
 {
-    vehicle->status = VEHICLE_STATUS_CRASHING;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_CRASHING, vehicle->sub_state);
 
     int32_t num_peeps = vehicle_get_total_num_peeps(vehicle);
     if (num_peeps != 0)
@@ -3707,9 +3662,7 @@ static void vehicle_update_travelling(rct_vehicle* vehicle)
             {
                 if (vehicle->sub_state <= 1)
                 {
-                    vehicle->status = VEHICLE_STATUS_ARRIVING;
-                    vehicle_invalidate_window(vehicle);
-                    vehicle->sub_state = 1;
+                    vehicle->SetState(VEHICLE_STATUS_ARRIVING, 1);
                     vehicle->var_C0 = 0;
                     return;
                 }
@@ -3819,12 +3772,11 @@ static void vehicle_update_travelling(rct_vehicle* vehicle)
     if (ride->mode == RIDE_MODE_POWERED_LAUNCH_PASSTROUGH && vehicle->velocity < 0)
         return;
 
-    vehicle->status = VEHICLE_STATUS_ARRIVING;
+    vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
     vehicle->current_station = _vehicleStationIndex;
-    vehicle_invalidate_window(vehicle);
     vehicle->var_C0 = 0;
 
-    vehicle->sub_state = 0;
+    // vehicle->sub_state = 0;
     if (vehicle->velocity < 0)
         vehicle->sub_state = 1;
 }
@@ -3859,9 +3811,7 @@ static void vehicle_update_arriving(rct_vehicle* vehicle)
             vehicle->update_flags &= ~VEHICLE_UPDATE_FLAG_12;
             vehicle->velocity = 0;
             vehicle->acceleration = 0;
-            vehicle->status = VEHICLE_STATUS_UNLOADING_PASSENGERS;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_UNLOADING_PASSENGERS, 0);
             return;
     }
 
@@ -3967,9 +3917,7 @@ loc_6D8E36:
 
     if (flags & VEHICLE_UPDATE_MOTION_TRACK_FLAG_VEHICLE_AT_STATION && unkF64E35 == 0)
     {
-        vehicle->status = VEHICLE_STATUS_DEPARTING;
-        vehicle->sub_state = 1;
-        vehicle_invalidate_window(vehicle);
+        vehicle->SetState(VEHICLE_STATUS_DEPARTING, 1);
         return;
     }
 
@@ -4003,26 +3951,20 @@ loc_6D8E36:
     {
         if (vehicle->num_laps < ride->num_circuits)
         {
-            vehicle->status = VEHICLE_STATUS_DEPARTING;
-            vehicle->sub_state = 1;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_DEPARTING, 1);
             return;
         }
 
         if (vehicle->num_laps == ride->num_circuits && vehicle->update_flags & VEHICLE_UPDATE_FLAG_12)
         {
-            vehicle->status = VEHICLE_STATUS_DEPARTING;
-            vehicle->sub_state = 1;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_DEPARTING, 1);
             return;
         }
     }
 
     if (ride->num_circuits != 1 && vehicle->num_laps < ride->num_circuits)
     {
-        vehicle->status = VEHICLE_STATUS_DEPARTING;
-        vehicle->sub_state = 1;
-        vehicle_invalidate_window(vehicle);
+        vehicle->SetState(VEHICLE_STATUS_DEPARTING, 1);
         return;
     }
 
@@ -4031,26 +3973,20 @@ loc_6D8E36:
         audio_play_sound_at_location(SOUND_RIDE_LAUNCH_2, vehicle->x, vehicle->y, vehicle->z);
         vehicle->velocity = 0;
         vehicle->acceleration = 0;
-        vehicle->status = VEHICLE_STATUS_DEPARTING;
-        vehicle->sub_state = 1;
-        vehicle_invalidate_window(vehicle);
+        vehicle->SetState(VEHICLE_STATUS_DEPARTING, 1);
         return;
     }
 
     if (ride->mode == RIDE_MODE_RACE && ride->lifecycle_flags & RIDE_LIFECYCLE_PASS_STATION_NO_STOPPING)
     {
-        vehicle->status = VEHICLE_STATUS_DEPARTING;
-        vehicle->sub_state = 1;
-        vehicle_invalidate_window(vehicle);
+        vehicle->SetState(VEHICLE_STATUS_DEPARTING, 1);
         return;
     }
 
     vehicle->update_flags &= ~VEHICLE_UPDATE_FLAG_12;
     vehicle->velocity = 0;
     vehicle->acceleration = 0;
-    vehicle->status = VEHICLE_STATUS_UNLOADING_PASSENGERS;
-    vehicle->sub_state = 0;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_UNLOADING_PASSENGERS, 0);
 }
 
 /**
@@ -4100,9 +4036,7 @@ static void vehicle_update_unloading_passengers(rct_vehicle* vehicle)
             {
                 vehicle_update_test_finish(vehicle);
             }
-            vehicle->status = VEHICLE_STATUS_MOVING_TO_END_OF_STATION;
-            vehicle->sub_state = 0;
-            vehicle_invalidate_window(vehicle);
+            vehicle->SetState(VEHICLE_STATUS_MOVING_TO_END_OF_STATION, 0);
             return;
         }
 
@@ -4142,9 +4076,7 @@ static void vehicle_update_unloading_passengers(rct_vehicle* vehicle)
     {
         vehicle_update_test_finish(vehicle);
     }
-    vehicle->status = VEHICLE_STATUS_MOVING_TO_END_OF_STATION;
-    vehicle->sub_state = 0;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_MOVING_TO_END_OF_STATION, 0);
 }
 
 /**
@@ -4160,7 +4092,7 @@ static void vehicle_update_waiting_for_cable_lift(rct_vehicle* vehicle)
     if (cableLift->status != VEHICLE_STATUS_WAITING_FOR_PASSENGERS)
         return;
 
-    cableLift->status = VEHICLE_STATUS_WAITING_TO_DEPART;
+    cableLift->SetState(VEHICLE_STATUS_WAITING_TO_DEPART, cableLift->sub_state);
     cableLift->cable_lift_target = vehicle->sprite_index;
 }
 
@@ -4222,9 +4154,7 @@ static void vehicle_update_travelling_cable_lift(rct_vehicle* vehicle)
 
     if (flags & VEHICLE_UPDATE_MOTION_TRACK_FLAG_11)
     {
-        vehicle->status = VEHICLE_STATUS_TRAVELLING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 1;
+        vehicle->SetState(VEHICLE_STATUS_TRAVELLING, 1);
         vehicle->lost_time_out = 0;
         return;
     }
@@ -4276,7 +4206,7 @@ static void loc_6DA9F9(rct_vehicle* vehicle, int32_t x, int32_t y, int32_t bx, i
         vehicle->track_type = (trackElement->GetTrackType() << 2) | (ride->boat_hire_return_direction & 3);
 
         vehicle->track_progress = 0;
-        vehicle->status = VEHICLE_STATUS_TRAVELLING;
+        vehicle->SetState(VEHICLE_STATUS_TRAVELLING, vehicle->sub_state);
         unk_F64E20.x = x;
         unk_F64E20.y = y;
     }
@@ -4738,9 +4668,7 @@ static void vehicle_update_swinging(rct_vehicle* vehicle)
     // swing has to be in slowing down phase
     if (vehicle->sub_state == 0)
     {
-        vehicle->status = VEHICLE_STATUS_ARRIVING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 0;
+        vehicle->SetState(VEHICLE_STATUS_ARRIVING, vehicle->sub_state);
         vehicle->var_C0 = 0;
         return;
     }
@@ -4834,9 +4762,7 @@ static void vehicle_update_ferris_wheel_rotating(rct_vehicle* vehicle)
     if (subState != vehicle->vehicle_sprite_type)
         return;
 
-    vehicle->status = VEHICLE_STATUS_ARRIVING;
-    vehicle_invalidate_window(vehicle);
-    vehicle->sub_state = 0;
+    vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
     vehicle->var_C0 = 0;
 }
 
@@ -4861,10 +4787,7 @@ static void vehicle_update_simulator_operating(rct_vehicle* vehicle)
         vehicle_invalidate(vehicle);
         return;
     }
-
-    vehicle->status = VEHICLE_STATUS_ARRIVING;
-    vehicle_invalidate_window(vehicle);
-    vehicle->sub_state = 0;
+    vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
     vehicle->var_C0 = 0;
 }
 
@@ -4935,9 +4858,7 @@ static void vehicle_update_rotating(rct_vehicle* vehicle)
         {
             if (vehicle->sub_state == 2)
             {
-                vehicle->status = VEHICLE_STATUS_ARRIVING;
-                vehicle_invalidate_window(vehicle);
-                vehicle->sub_state = 0;
+                vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
                 vehicle->var_C0 = 0;
                 return;
             }
@@ -4949,9 +4870,7 @@ static void vehicle_update_rotating(rct_vehicle* vehicle)
 
     if (ride->type == RIDE_TYPE_ENTERPRISE && vehicle->sub_state == 2)
     {
-        vehicle->status = VEHICLE_STATUS_ARRIVING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 0;
+        vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
         vehicle->var_C0 = 0;
         return;
     }
@@ -4981,9 +4900,7 @@ static void vehicle_update_space_rings_operating(rct_vehicle* vehicle)
     }
     else
     {
-        vehicle->status = VEHICLE_STATUS_ARRIVING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 0;
+        vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
         vehicle->var_C0 = 0;
     }
 }
@@ -5011,9 +4928,7 @@ static void vehicle_update_haunted_house_operating(rct_vehicle* vehicle)
 
     if (vehicle->current_time + 1 > 1500)
     {
-        vehicle->status = VEHICLE_STATUS_ARRIVING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 0;
+        vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
         vehicle->var_C0 = 0;
         return;
     }
@@ -5056,9 +4971,7 @@ static void vehicle_update_crooked_house_operating(rct_vehicle* vehicle)
     // Originally used an array of size 1 at 0x009A0AC4 and passed the sub state into it.
     if ((uint16_t)(vehicle->current_time + 1) > 600)
     {
-        vehicle->status = VEHICLE_STATUS_ARRIVING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 0;
+        vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
         vehicle->var_C0 = 0;
         return;
     }
@@ -5094,9 +5007,7 @@ static void vehicle_update_top_spin_operating(rct_vehicle* vehicle)
         return;
     }
 
-    vehicle->status = VEHICLE_STATUS_ARRIVING;
-    vehicle_invalidate_window(vehicle);
-    vehicle->sub_state = 0;
+    vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
     vehicle->var_C0 = 0;
 }
 
@@ -5119,9 +5030,7 @@ static void vehicle_update_showing_film(rct_vehicle* vehicle)
     }
     else
     {
-        vehicle->status = VEHICLE_STATUS_ARRIVING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 0;
+        vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
         vehicle->var_C0 = 0;
     }
 }
@@ -5142,9 +5051,7 @@ static void vehicle_update_doing_circus_show(rct_vehicle* vehicle)
     }
     else
     {
-        vehicle->status = VEHICLE_STATUS_ARRIVING;
-        vehicle_invalidate_window(vehicle);
-        vehicle->sub_state = 0;
+        vehicle->SetState(VEHICLE_STATUS_ARRIVING, 0);
         vehicle->var_C0 = 0;
     }
 }
@@ -5257,8 +5164,7 @@ static void vehicle_kill_all_passengers(rct_vehicle* vehicle)
 
 static void vehicle_crash_on_land(rct_vehicle* vehicle)
 {
-    vehicle->status = VEHICLE_STATUS_CRASHED;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_CRASHED, vehicle->sub_state);
 
     Ride* ride = get_ride(vehicle->ride);
     if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_CRASHED))
@@ -5311,8 +5217,7 @@ static void vehicle_crash_on_land(rct_vehicle* vehicle)
 
 static void vehicle_crash_on_water(rct_vehicle* vehicle)
 {
-    vehicle->status = VEHICLE_STATUS_CRASHED;
-    vehicle_invalidate_window(vehicle);
+    vehicle->SetState(VEHICLE_STATUS_CRASHED, vehicle->sub_state);
 
     Ride* ride = get_ride(vehicle->ride);
     if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_CRASHED))
@@ -10011,4 +9916,11 @@ const rct_vehicle* rct_vehicle::GetCar(size_t carIndex) const
         car = GET_VEHICLE(car->next_vehicle_on_train);
     }
     return car;
+}
+
+void rct_vehicle::SetState(VEHICLE_STATUS vehicleStatus, uint8_t subState)
+{
+    status = vehicleStatus;
+    sub_state = subState;
+    vehicle_invalidate_window(this);
 }
